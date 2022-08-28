@@ -1,4 +1,5 @@
-import React, { createContext, useReducer } from 'react';
+import React, { createContext, useEffect, useReducer } from 'react';
+import { supabase } from '../utils/supabaseClient';
 
 const initialState = {
   isModalOpen: false,
@@ -23,6 +24,12 @@ const authReducer = (state, action) => {
 
 const AuthContextProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
+
+  useEffect(() => {
+    supabase.auth.onAuthStateChange((event, session) => {
+      dispatch({ type: 'LOGIN', session });
+    });
+  }, []);
 
   return (
     <AuthContext.Provider value={{ state, dispatch }}>

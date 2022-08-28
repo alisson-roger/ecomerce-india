@@ -1,4 +1,5 @@
 import React, { useContext, useState } from 'react';
+import { toast } from 'react-hot-toast';
 import useForm from '../../hooks/useForm';
 import { AuthContext } from '../../state/AuthContext';
 import { supabase } from '../../utils/supabaseClient';
@@ -6,6 +7,7 @@ import { supabase } from '../../utils/supabaseClient';
 const Auth = () => {
   const {
     state: { formType },
+    dispatch,
   } = useContext(AuthContext);
 
   const [loading, setLoading] = useState(false);
@@ -21,7 +23,7 @@ const Auth = () => {
     setLoading(true);
 
     if (formType === 'signup') {
-      const { data, error } = await supabase.auth.signUp(
+      const { error: signUpError } = await supabase.auth.signUp(
         {
           email: form.email,
           password: form.password,
@@ -33,19 +35,32 @@ const Auth = () => {
         }
       );
 
+      if (signUpError) toast.error(signUpError.message);
+
       await supabase.from('user').insert([
         {
           name: form.name,
         },
       ]);
     } else {
-      await supabase.auth.signIn({
+      const { error } = await supabase.auth.signIn({
         email: form.email,
         password: form.password,
       });
+
+      if (error) toast.error(error.message);
     }
+
+    toast.success(
+      `${
+        formType === 'signup'
+          ? 'You have successfull signed up!'
+          : 'You have successfully signed in!'
+      }`
+    );
     resetForm();
     setLoading(false);
+    dispatch({ type: 'CLOSE_AUTH_MODAL' });
   };
 
   return (
